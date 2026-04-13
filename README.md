@@ -1,5 +1,7 @@
 # 基于mediapipe的关键点检测复现
+小组名称：汪汪队
 论文链接：https://arxiv.org/abs/1906.08172
+原文仓库链接：https://github.com/google-ai-edge/mediapipe
 论文介绍：介绍了 Google 提出的 MediaPipe 框架，用于构建实时感知应用，例如目标检测、手势识别、人脸关键点检测等。
 小组成员:
 欧阳权2025303120173
