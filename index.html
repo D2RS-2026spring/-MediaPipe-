@@ -170,7 +170,7 @@
         const wrist = landmarks[0];
 
         // 食指中指伸直
-        if (getDistance(landmarks[8], wrist) < getDistance(landmarks[6], wrist)) return false;
+        if (getDistance(landmarks[8], wrist) > getDistance(landmarks[6], wrist)) return false;
         if (getDistance(landmarks[12], wrist) < getDistance(landmarks[10], wrist)) return false;
 
         // 无名指小指弯曲
