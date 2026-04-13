@@ -142,7 +142,7 @@
     // 检测捏合 (食指尖 + 拇指尖)
     function isPinch(landmarks) {
         const dist = getDistance(landmarks[8], landmarks[4]);
-        return dist < 0.5; // 阈值，根据需要调整
+        return dist < 0.8; // 阈值，根据需要调整
     }
 
     // 检测张开手掌 (5指伸开)
