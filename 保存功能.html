@@ -1,0 +1,56 @@
+<!-- 保存功能CSS - 添加到 index.html 的 <style> 标签内 -->
+
+#saveBtn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 15;
+}
+
+#saveBtn:hover {
+    background: #45a049;
+}
+
+<!-- 保存功能HTML - 添加到 index.html 的 <div id="container"> 内 -->
+
+<button id="saveBtn" onclick="saveDrawing()">保存作品</button>
+
+// 保存功能JS - 添加到 index.html 的 <script> 标签内
+
+function saveDrawing() {
+    const saveCanvas = document.createElement('canvas');
+    saveCanvas.width = canvasElement.width;
+    saveCanvas.height = canvasElement.height;
+    const saveCtx = saveCanvas.getContext('2d');
+    
+    saveCtx.fillStyle = '#ffffff';
+    saveCtx.fillRect(0, 0, saveCanvas.width, saveCanvas.height);
+    
+    strokes.forEach(stroke => {
+        saveCtx.beginPath();
+        saveCtx.lineWidth = stroke.size;
+        saveCtx.lineCap = 'round';
+        saveCtx.lineJoin = 'round';
+        saveCtx.strokeStyle = stroke.isEraser ? '#ffffff' : stroke.color;
+        
+        if (stroke.points.length > 0) {
+            saveCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+            for (let i = 1; i < stroke.points.length; i++) {
+                saveCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
+            }
+        }
+        saveCtx.stroke();
+    });
+    
+    const link = document.createElement('a');
+    link.download = '手势绘图_' + new Date().getTime() + '.png';
+    link.href = saveCanvas.toDataURL();
+    link.click();
+}

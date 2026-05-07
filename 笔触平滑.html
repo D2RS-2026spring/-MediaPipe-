@@ -1,0 +1,31 @@
+// 笔触平滑JS - 替换 index.html 中 "C3: 写字 (捏合)" 部分的代码
+
+else if (isPinch(hand1)) {
+    statusText = toolType === 'pen' ? "正在书写" : "正在擦除";
+    const tip = toPixelCoords(hand1[8]);
+    
+    if (!currentStroke) {
+        currentStroke = {
+            color: strokeColor,
+            size: strokeSize,
+            isEraser: toolType === 'eraser',
+            points: []
+        };
+        strokes.push(currentStroke);
+        currentStroke.points.push({x: tip.x, y: tip.y});
+    } else {
+        const lastPoint = currentStroke.points[currentStroke.points.length - 1];
+        const distance = Math.hypot(tip.x - lastPoint.x, tip.y - lastPoint.y);
+        
+        if (distance > 5) {
+            const steps = Math.min(3, Math.floor(distance / 5));
+            for (let i = 1; i <= steps; i++) {
+                const t = i / (steps + 1);
+                const midX = lastPoint.x + (tip.x - lastPoint.x) * t;
+                const midY = lastPoint.y + (tip.y - lastPoint.y) * t;
+                currentStroke.points.push({x: midX, y: midY});
+            }
+        }
+        currentStroke.points.push({x: tip.x, y: tip.y});
+    }
+}

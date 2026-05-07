@@ -38,9 +38,33 @@
         /* 加载遮罩 */
         #loading {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; color: #fff; display: flex; justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff; display: flex; flex-direction: column; justify-content: center;
             align-items: center; z-index: 20; font-size: 24px;
         }
+        
+        #loading::after {
+            content: '';
+            width: 50px; height: 50px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 保存按钮 */
+        #saveBtn {
+            position: absolute; bottom: 20px; right: 20px;
+            padding: 12px 24px; background: #4CAF50; color: white;
+            border: none; border-radius: 5px; font-size: 16px;
+            cursor: pointer; z-index: 15;
+        }
+        #saveBtn:hover { background: #45a049; }
     </style>
 </head>
 <body>
@@ -50,6 +74,7 @@
     <canvas id="output_canvas"></canvas>
     <div id="status">正在初始化...</div>
     <div id="loading">正在加载模型，请稍候...<br>请允许摄像头权限</div>
+    <button id="saveBtn" onclick="saveDrawing()">保存作品</button>
 </div>
 
 <script>
@@ -225,6 +250,54 @@
         strokes = []; // 清空笔画
     }
 
+    // 保存作品功能
+    function saveDrawing() {
+        const saveCanvas = document.createElement('canvas');
+        saveCanvas.width = canvasElement.width;
+        saveCanvas.height = canvasElement.height;
+        const saveCtx = saveCanvas.getContext('2d');
+        
+        // 填充白色背景
+        saveCtx.fillStyle = '#ffffff';
+        saveCtx.fillRect(0, 0, saveCanvas.width, saveCanvas.height);
+        
+        // 绘制所有笔画
+        strokes.forEach(stroke => {
+            saveCtx.beginPath();
+            saveCtx.lineWidth = stroke.size;
+            saveCtx.lineCap = 'round';
+            saveCtx.lineJoin = 'round';
+            saveCtx.strokeStyle = stroke.isEraser ? '#ffffff' : stroke.color;
+            
+            if (stroke.points.length > 0) {
+                saveCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                for (let i = 1; i < stroke.points.length; i++) {
+                    saveCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                }
+            }
+            saveCtx.stroke();
+        });
+        
+        // 下载图片
+        const link = document.createElement('a');
+        link.download = '手势绘图_' + new Date().getTime() + '.png';
+        link.href = saveCanvas.toDataURL();
+        link.click();
+        
+        statusDiv.innerText = "作品已保存！";
+        setTimeout(() => {
+            statusDiv.innerText = "待机：捏合手指写字";
+        }, 2000);
+    }
+
+    // 笔触平滑 - 使用贝塞尔曲线
+    function getSmoothPoint(p1, p2, p3, t) {
+        // 二次贝塞尔曲线
+        const x = (1-t)*(1-t)*p1.x + 2*(1-t)*t*p2.x + t*t*p3.x;
+        const y = (1-t)*(1-t)*p1.y + 2*(1-t)*t*p2.y + t*t*p3.y;
+        return {x, y};
+    }
+
 
     // --- 5. MediaPipe 处理核心 ---
     
@@ -387,7 +460,6 @@
                     else if (isPinch(hand1)) {
                         statusText = toolType === 'pen' ? "正在书写" : "正在擦除";
                         const tip = toPixelCoords(hand1[8]); // 使用食指尖作为笔触
-                        // 平滑处理：简单的取中点或贝塞尔曲线可以在这里添加，这里直接连线
                         
                         if (!currentStroke) {
                             currentStroke = {
@@ -397,8 +469,25 @@
                                 points: []
                             };
                             strokes.push(currentStroke);
+                            // 第一个点直接添加
+                            currentStroke.points.push({x: tip.x, y: tip.y});
+                        } else {
+                            // 笔触平滑：使用插值添加中间点
+                            const lastPoint = currentStroke.points[currentStroke.points.length - 1];
+                            const distance = Math.hypot(tip.x - lastPoint.x, tip.y - lastPoint.y);
+                            
+                            // 如果距离较大，添加中间插值点使线条更平滑
+                            if (distance > 5) {
+                                const steps = Math.min(3, Math.floor(distance / 5));
+                                for (let i = 1; i <= steps; i++) {
+                                    const t = i / (steps + 1);
+                                    const midX = lastPoint.x + (tip.x - lastPoint.x) * t;
+                                    const midY = lastPoint.y + (tip.y - lastPoint.y) * t;
+                                    currentStroke.points.push({x: midX, y: midY});
+                                }
+                            }
+                            currentStroke.points.push({x: tip.x, y: tip.y});
                         }
-                        currentStroke.points.push({x: tip.x, y: tip.y});
                     } else {
                         // 抬笔
                         currentStroke = null;
